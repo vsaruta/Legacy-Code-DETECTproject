@@ -1,0 +1,76 @@
+# install.packages("foreach")
+# install.packages("doParallel")
+
+library(foreach)
+library(doParallel) # I think this is loaded with foreach, but I don't remember for sure
+
+for( t in 1:Nt_run ) %dopar% 
+  {
+    New_DGS_1_3 <- as.numeric(c(Dgs_13C[t,1],Dgs_13C[t, ]))
+    New_DGS_2_4 <- as.numeric(c(Dgs_12C[t,1],Dgs_12C[t, ]))
+    print("Current Iteration:")
+    print(t)
+    if (t > 1) 
+    {
+      for (i in 1:4) 
+      {
+        cctype[i,1,t] <- as.array(as.matrix((squeeze(cctype[i,2,t-1])/sum(cctype[ ,2,t-1]))*upbc[t-1,1]));
+        cctype[i,Nz+1,t] <- cctype[i,Nz,t];
+      }
+    }
+    ctype = squeeze(cctype[ , ,t]);
+    
+    for (tt in 1:Ndt)
+    {
+      ctype_old <- ctype;
+      
+      stopImplicitCluster() # just putting this up here for while you're trouble shooting
+      registerDoParallel(cores=4) # without args, it uses half of your cores by default
+      # populate new ctype in parallel
+      ctype <- foreach( z=2:Nz, # iteration index
+                        .combine=cbind, # specify how to combine iterations (index order is preserved)
+                        .export=c("ctype_old","New_DGS_1_3","New_DGS_2_4","Stype","dt","dz","t","Dgs_t") 
+                        # export all external vars and user def functions you need during the loop
+      )  %dopar% 
+        {
+          temp <- numeric(4) # intialize empty vector (I think it's numeric?)
+          for (i in 1:4) 
+          {
+            if (i == 1 || i == 3) 
+            {
+              Dgs_t <- New_DGS_1_3
+            }
+            else 
+            {
+              Dgs_t <- New_DGS_2_4
+            }
+            
+            if (z==Nz) 
+            {
+              temp[i] = ctype_old[i,z] + dt*((Dgs_t[z]/(dz*dz))*(ctype_old[i,z-1]-ctype_old[i,z])+ Stype[i,t,z]);
+            }
+            else 
+            {
+              temp[i] = ctype_old[i,z] + dt*((Dgs_t[z]/(dz*dz))*(ctype_old[i,z+1]-2*ctype_old[i,z]+ctype_old[i,z-1]) + ((Dgs_t[z+1]-Dgs_t[z-1])*(ctype_old[i,z+1]-ctype_old[i,z-1]))/(4*dz^2) + Stype[i,t,z]);
+            }
+            
+          }
+          return(temp)
+        }
+      stopImplicitCluster() # not necessary (it should stop automatically) but good practice
+    }
+    cctype[ , ,t+1] <- c(ctype[1:4,1:Nz], ctype[1:4,Nz]); # this should still work with the above changes
+    for (i in 1:4)
+    {
+      if ((i==1) || (i==3)){
+        MeanDgs <- Dgs_13C[t,1];
+      }
+      else 
+      {
+        MeanDgs <- Dgs_12C[t,1];
+      }
+      fluxtype[i,t] = (MeanDgs*(cctype[i,2,t]-cctype[i,1,t])/dz)/(44*3.6);
+    }
+    # %dividing by (44*3.6) converts units of soil CO2 from mg CO2 m-2 hr-1 to
+    # %umol CO2 m-2 s-1.
+  }

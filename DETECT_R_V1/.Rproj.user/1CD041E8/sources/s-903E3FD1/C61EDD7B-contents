@@ -1,0 +1,37 @@
+model
+{
+  for (i in 1:i_n)
+  {
+    for (z in 1:z_n)
+    {
+      # Likelihood for CO2 data; 
+      # CO2_Emi[i] ~ dnorm(CO2_Emission[i,z], tau_CO2_Emi[i,z])
+      CO2_Emi[i] ~ dnorm(CO2_Emission[i,z], tau_CO2_Emi[i,z])
+      # Compute squared deviations for computing posterior predictive loss:
+      squared_deviations[i] <- pow(CO2_Emi[i]-CO2_Emi.rep[i],2)
+      
+      
+      for (t in 1:t_n)
+      {
+        # Numerical approximation of CO2 concentrations based on the PDE eqn in
+        # Fang & Moncrieff. Numberical sol'n based on the nonhomogeneous problem 
+        # in Haberman (1998) Elementary Applied Partial Differential Equations, 
+        # Page 240 (section 6.3.7), aka Forward Euler method:
+        
+        # Make sure units is CM and then translate to M
+        # USE ACTUAL Eq.(11) from paper
+        # Ryan GeoscModelDEv Model 2018
+        # Stype/Dgs
+        CO2_Emission[i,z] <- ctype_old[i,z] + dt*((Dgs_t[1,z]/(dz*dz))*(ctype_old[i,z-1]-ctype_old[i,z]) + Stype[i,t,z])
+        #V1 Based on Matlab code
+        #CO2_Emission[i,z] <- ctype_old[i,z] + dt*((Dgs_t[1,z]/(dz*dz))*(ctype_old[i,z-1]-ctype_old[i,z]) + Stype[i,t,z])
+        # HERE NEED TO MAKE SURE WE ASSIGN CORRECTLY (MAY BE REQUIRE ADDITIONAL CALCULATIONS + JAGS TRICKS?)
+        #ctype_old[i,z] = CO2_Emission[i,z]
+      }
+    }
+  }
+  for(t in 1:t_n){
+    tau_CO2_Emi[t] ~ dgamma(0.1, 0.1)
+  }
+}
+

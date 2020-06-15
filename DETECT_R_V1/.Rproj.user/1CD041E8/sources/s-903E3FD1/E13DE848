@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1580083317782.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "E13DE848",
+    "lastKnownWriteTime" : 1580086921,
+    "last_content_update" : 1580086921157,
+    "path" : "D:/Research/Projects/DETECT_R_BEST_NSS/DETECT_R_BETA_V1_0.R",
+    "project_path" : "DETECT_R_BETA_V1_0.R",
+    "properties" : {
+        "cursorPosition" : "678,0",
+        "scrollLine" : "651"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

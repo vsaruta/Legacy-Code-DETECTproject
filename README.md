@@ -1,2 +1,2 @@
 # DETECTproject
-This repository is for all DETECT versions
+This repository is for all Legacy DETECT versions
